@@ -3,10 +3,32 @@ import random
 from tqdm import tqdm
 import sys
 
-# Define the board
+# Create the board
 def newBoard():
-    "Create a new 3x3 board initialized with zeros."
     return np.zeros((3, 3), dtype=int)
+
+def reward(board, player):
+    "Returns 1 if the player wins, -1 if the player loses, 0 for a draw, and -0.1 for an ongoing game."
+    game_result = winner(board)
+    if game_result == player:
+        return 1
+    elif game_result == -player:
+        return -1
+    elif game_result == 0:
+        return 0
+    return -0.1  # negative reward for ongoing game
+
+
+def potentialActions(board):
+    "Return a list of all possible actions (empty positions) on the board."
+    return [(i, j) for i in range(3) for j in range(3) if board[i, j] == 0]
+
+
+def takeAction(board, action, player):
+    "Apply an action (move) to the board for a given player."
+    board[action] = player
+    return board
+
 
 # Check for a winner
 def winner(board):
@@ -27,26 +49,6 @@ def winner(board):
         return 0  # Draw
     return None  # No winner yet
 
-def potentialActions(board):
-    "Return a list of all possible actions (empty positions) on the board."
-    return [(i, j) for i in range(3) for j in range(3) if board[i, j] == 0]
-
-def takeAction(board, action, player):
-    "Apply an action (move) to the board for a given player."
-    board[action] = player
-    return board
-
-def reward(board, player):
-    "Returns 1 if the player wins, -1 if the player loses, 0 for a draw, and -0.1 for an ongoing game."
-    game_result = winner(board)
-    if game_result == player:
-        return 1
-    elif game_result == -player:
-        return -1
-    elif game_result == 0:
-        return 0
-    return -0.1  # negative reward for ongoing game
-
 class QLearningAgent:
     def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
         "Initialize the Q-learning agent with given alpha, gamma, and epsilon."
@@ -59,13 +61,6 @@ class QLearningAgent:
         "Get the Q-value for a given state and action."
         return self.q_table.get((state.tobytes(), action), 0.0)
 
-    def update_q_value(self, state, action, reward, next_state):
-        "Update the Q-value for a given state-action pair using the Q-learning update rule."
-        max_q_next = max([self.qValue(next_state, a) for a in potentialActions(next_state)], default=0.0)
-        current_q = self.qValue(state, action)
-        new_q = current_q + self.alpha * (reward + self.gamma * max_q_next - current_q)
-        self.q_table[(state.tobytes(), action)] = new_q
-
     def actionChoice(self, state):
         "Choose an action based on the epsilon-greedy policy."
         if random.uniform(0, 1) < self.epsilon:
@@ -75,6 +70,13 @@ class QLearningAgent:
             max_q = max(q_values.values())
             actions_with_max_q = [action for action, q_value in q_values.items() if q_value == max_q]
             return random.choice(actions_with_max_q)
+
+    def update_q_value(self, state, action, reward, next_state):
+        "Update the Q-value for a given state-action pair using the Q-learning update rule."
+        max_q_next = max([self.qValue(next_state, a) for a in potentialActions(next_state)], default=0.0)
+        current_q = self.qValue(state, action)
+        new_q = current_q + self.alpha * (reward + self.gamma * max_q_next - current_q)
+        self.q_table[(state.tobytes(), action)] = new_q
 
 def train(agent, episodes = 1000):
     "Train the Q-learning agent over a specified number of episodes."
