@@ -1,7 +1,6 @@
 import numpy as np
 import random
 from tqdm import tqdm
-import sys
 
 # Create the board
 def newBoard():
@@ -102,13 +101,12 @@ def train(agent, episodes = 1000):
             state = nextState
             player *= -1  # Switch player
 
-            # Safety check: ensure the loop does not go on forever
             if step == 8:
-                print("Reached maximum steps in the game.")
+                print("Game is over")
                 break
 
 def random_opponent(state):
-    "Choose a random action for the opponent."
+    "Choose a random action for the opponent." 
     return random.choice(potentialActions(state))
 
 def test(agent, games=10000):
